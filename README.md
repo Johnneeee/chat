@@ -1,7 +1,7 @@
 # chat
 Trying to make a chatting platform
 
-##### creds
+### creds
 
 Pavel, Pål
 

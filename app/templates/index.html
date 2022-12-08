@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>chat</title>
+    <link rel="stylesheet" href="highlight.css" />
+    <link rel="stylesheet" href="index.css" />
+	<link rel="icon" href="static/resources/favicon.png" type="image/png" />
+</head>
+
+<body onload="getUser();allUsers();allBlockedUsers()">
+    <div id="usersDiv">
+        <div id="allUsersDiv">
+            <p>All users</p>
+            <pre id="preAllUsers"></pre>
+        </div>
+        <!-- <p id="pAllUsers">All users</p> -->
+        <div id="allBlockedUsersDiv">
+            <p>All blocked users</p>
+            <pre id="preAllBlockedUsers"></pre>
+        </div>
+        <!-- <input type="search" id="search" name="search" enterkeyhint="search" value="*">
+        <button type="button" class="button" id="searchBtn">Search!</button>
+        <button type="button" class="button" id="allBtn">Show all</button>
+        <button type="button" class="button" id="usersBtn">See all users</button>
+        <button type="button" class="button" id="usersBlockedBtn">BlockedUsers</button> -->
+    </div>
+
+    <div id="settingsDiv">
+        <input type="text" id="search" class="settingsField" name="search" value="Search">
+    <br>
+        <button type="button" class="button" id="searchBtn">Search</button>
+        <button type="button" class="button" id="allBtn">Search All</button>
+    <br><hr>
+        <input type="text" id="blockUnblock" class="settingsField" name="blockUnblock" value="block/unblock user">
+    <br>
+        <button type="button" class="button" id="blockUserBtn">blockUser</button>
+        <button type="button" class="button" id="unBlockUserBtn">unBlockUser</button>
+    <br><hr>
+        <input type="text" id="reply" class="settingsField" name="reply" value="reply id">
+    <br>
+        <button type="button" class="button" id="replyBtn">Reply</button>
+    <br><hr>
+        <button type="button" class="button" id="logoutBtn">Logout</button>
+    <hr>
+    </div>
+
+    <div id="fromToDiv">
+        <input type="text" id="sender" name="sender" value="" readonly="readonly">
+        <input type="text" id="recipients" name="recipients" value="Add recipients here">
+    </div>
+    <div id="outputDiv">
+        <pre id="output"></pre>
+    </div>
+    <div id="messageDiv">
+        <textarea id="message" value="Type a message">Type a message</textarea>
+        <button type="button" class="button" id="sendBtn">Send</button>
+    </div>
+</body>
+
+<script>
+    var reqId = 0;
+
+    var getUser = async () => {
+    const u = `/user`;
+    j = await fetch(u);
+    res = await j.json();
+    senderField.value = res.name
+    }
+
+    var preAllUsers = document.getElementById('preAllUsers');
+    var allUsers = async () => {
+        const q = `/allusers`;
+        res = await fetch(q);
+        data = await res.json();
+        data.forEach((x) => {
+            const body = document.createElement('p');
+            // msg=""
+            // if (x.isActive == 0){
+            //     msg = "is currently offline"
+            // }
+            // else{
+            //     msg = "is Online!"
+            // }
+            body.innerText = `${x.user}`;
+            preAllUsers.appendChild(body);
+        });
+    }
+
+    var preAllBlockedUsers = document.getElementById('preAllBlockedUsers');
+    var allBlockedUsers = async () => {
+        const q = `/usersBlocked`;
+        res = await fetch(q);
+        data = await res.json();
+    
+        data.forEach(x => {
+            const body = document.createElement('p');
+            body.innerText = `${x.user}`
+            preAllBlockedUsers.appendChild(body);
+        });
+    }
+
+    var senderField = document.getElementById('sender');
+    var recipientsField = document.getElementById('recipients');
+    var messageField = document.getElementById('message');
+    var sendBtn = document.getElementById('sendBtn');
+    var output = document.getElementById('output');
+    var send = async (sender, recipient, message) => {
+        messageField.value = "";
+        const id = reqId++;
+        const q = `/send?sender=${encodeURIComponent(sender)}&recipient=${encodeURIComponent(recipient)}&message=${encodeURIComponent(message)}&reply=${encodeURIComponent(0)}`;
+        res = await fetch(q, { method: 'post' });
+        data = await res.json();
+        const head = document.createElement('p');
+        head.innerText = `From ${data.sender} to ${data.recipients}:`;
+        output.appendChild(head);
+        const body = document.createElement('p');
+        body.innerText = `${data.message} (Sent: ${data.timestamp}, ID: ${data.id})`
+        output.appendChild(body);
+        body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+    };
+
+    // var anchor = document.getElementById('anchor');
+
+    var searchField = document.getElementById('search');
+
+    var blockUnblockField = document.getElementById('blockUnblock');
+    var blockedUsersField = document.getElementById('blockedUsers');
+    var replyField = document.getElementById('reply');
+
+    var searchBtn = document.getElementById('searchBtn');
+    var logoutBtn = document.getElementById('logoutBtn');
+    var allBtn = document.getElementById('allBtn');
+    var usersBtn = document.getElementById('usersBtn');
+    var usersBlockedBtn = document.getElementById('usersBlockedBtn');
+    var replyBtn = document.getElementById('replyBtn');
+
+    var blockUserBtn = document.getElementById('blockUserBtn');
+    var unBlockUserBtn = document.getElementById('unBlockUserBtn');
+
+    
+    var header = document.getElementById('header');
+
+    var search = async (query) => {
+        document.getElementById("output").innerText = "";
+        const id = reqId++;
+        const q = `/search?q=${encodeURIComponent(query)}`;
+        const res = await fetch(q);
+        const data = await res.json();
+
+
+        if (data.reply == "0") {
+                data.forEach((x) => {
+                    const head = document.createElement('h3');
+                    const body = document.createElement('p');
+                    head.textContent = `From ${x.sender} To ${x.reciever}`;
+                    output.appendChild(head);
+                    body.innerText = `${x.message} (Sent: ${x.time}, ID: ${x.id})`;
+                    output.appendChild(body);
+                    body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+                    // anchor.scrollIntoView();
+                });
+        }
+        else {
+            data.forEach((x) => {
+                const head = document.createElement('h3');
+                const body = document.createElement('p');
+                head.textContent = `From ${x.sender} To ${x.reciever}`;
+                output.appendChild(head);
+                body.innerText = `${x.message} (Sent: ${x.time}, ID: ${x.id}, A reply to: ${x.reply})`;
+                output.appendChild(body);
+                body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+                // anchor.scrollIntoView();
+            });
+        }
+    };
+
+
+    var reply = async (message, replyId) => {
+        document.getElementById("reply").value = "";
+
+        const q = `/reply?message=${encodeURIComponent(message)}&reply=${encodeURIComponent(replyId)}`;
+        const res = await fetch(q, { method: 'post' });
+        const data = await res.json();
+        const head = document.createElement('h3');
+
+        if (data.error == "no") {
+            head.textContent = `From ${data.sender} To ${data.recipients}`;
+            output.appendChild(head);
+            const body = document.createElement('p');
+            body.innerText = `${data.message} (Sent: ${data.timestamp}, ID: ${data.id}, Reply to: ${data.reply})`;
+            output.appendChild(body);
+            body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+            // anchor.scrollIntoView();
+        }
+        
+        else{
+            head.textContent = `There was a problem`;
+            output.appendChild(head);
+            const body = document.createElement('p');
+            body.innerText = `${data.error}`;
+            output.appendChild(body);
+            body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+            // anchor.scrollIntoView();
+        }
+    }
+
+    var blockUser = async (username, usernameBlocked) => {
+        document.getElementById("blockUnblock").value = "";
+        const id = reqId++;
+        const q = `/blockUser?username=${encodeURIComponent(username)}&usernameBlocked=${encodeURIComponent(usernameBlocked)}`;
+        const res = await fetch(q, { method: 'post' });
+        const data = await res.json();
+        // const head = document.createElement('h3');
+        usersBlocked();
+        // if(data.error != "no"){
+        //     head.textContent = `There was a problem`;
+        //     output.appendChild(head);
+        //     const body = document.createElement('p');
+        //     body.innerText = `${data.error}`;
+        //     output.appendChild(body);
+        //     body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+        //     anchor.scrollIntoView();
+        // }
+    }
+
+    var unblockUser = async (username, usernameBlocked) => {
+        document.getElementById("blockUnblock").value = "";
+        const id = reqId++;
+        const q = `/unblockUser?username=${encodeURIComponent(username)}&usernameBlocked=${encodeURIComponent(usernameBlocked)}`;
+        const res = await fetch(q, { method: 'post' });
+        const data = await res.json();
+        usersBlocked();
+    }
+
+    var logout = async () => {
+        res = await fetch('/logout')
+        window.location.href = "/login"
+    }
+
+    // searchField.addEventListener('keydown', ev => {
+    //     if (ev.key === 'Enter') {
+    //         search(searchField.value);
+    //     }
+    // });
+
+    var getUser = async () => {
+        // document.getElementById("output").innerText = "";
+        const u = `/user`;
+        j = await fetch(u);
+        res = await j.json();
+        document.getElementById("sender").value = res.name
+    }
+
+    var usersBlocked = async () => {
+        preAllBlockedUsers.innerText = "";
+        const q = `/usersBlocked`;
+        res = await fetch(q);
+        data = await res.json();
+        // console.log(res);
+    
+        // const head = document.createElement('h3');
+        // head.textContent = `Here are all the blocked users:`;
+        // outputd.appendChild(head);
+
+        data.forEach(x => {
+            const body = document.createElement('p');
+            body.innerText = `${x.user}`
+            preAllBlockedUsers.appendChild(body);
+            // body.scrollIntoView({block: "end", inline: "nearest", behavior: "smooth"});
+            // anchor.scrollIntoView();
+        });
+    }
+
+    searchBtn.addEventListener('click', () => search(searchField.value));
+    allBtn.addEventListener('click', () => search('*'));
+    sendBtn.addEventListener('click', () => send(senderField.value, recipientsField.value, messageField.value));
+    logoutBtn.addEventListener('click', async () => logout());
+    // usersBtn.addEventListener('click', () => allusers());
+    // usersBlockedBtn.addEventListener('click', () => usersBlocked());
+    replyBtn.addEventListener('click', () => reply(messageField.value, replyField.value));
+    blockUserBtn.addEventListener('click', () => blockUser(senderField.value, blockUnblockField.value));
+    unBlockUserBtn.addEventListener('click', () => unblockUser(senderField.value, blockUnblockField.value));
+
+</script>
+
+</html>
